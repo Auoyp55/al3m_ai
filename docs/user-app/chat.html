@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080614">
+  <title>AL3M AI — Beyond The Sky</title>
+  <link rel="stylesheet" href="/user-app/css/chat.css">
+  <script src="/user-app/js/chat.js" defer></script>
+</head>
+<body>
+  <div class="sky" aria-hidden="true">
+    <div class="stars" id="stars"></div>
+    <div class="moon"></div>
+    <div class="nebula"></div>
+    <div class="horizon"></div>
+  </div>
+
+  <header class="topbar">
+    <button class="icon-btn" id="historyBtn"
+      aria-label="سجل المحادثات" title="سجل المحادثات">☷</button>
+
+    <button class="icon-btn" id="newChatBtn" aria-label="محادثة جديدة">＋</button>
+
+    <div class="brand">
+      <span class="brand-symbol">✦</span>
+      <div>
+        <h1>AL3M <span>AI</span></h1>
+        <p><i></i> ذكاء اصطناعي متصل</p>
+      </div>
+    </div>
+
+    <button class="icon-btn" id="announcementsBtn" aria-label="الإعلانات">
+      ♢<span class="notification-dot" id="announcementDot" hidden></span>
+    </button>
+  </header>
+
+  <main class="app-main">
+    <section class="welcome" id="welcome">
+      <div class="orb">✦</div>
+      <p class="eyebrow">BEYOND THE SKY</p>
+      <h2>إلى أين نذهب <span>اليوم؟</span></h2>
+      <p class="welcome-text">فكرتك تبدأ هنا. اسأل، اكتشف، واصنع شيئًا مميزًا.</p>
+
+      <div class="suggestions" id="suggestions">
+        <button class="suggestion" data-prompt="اشرح لي فكرة الذكاء الاصطناعي بطريقة بسيطة">
+          <span>◈</span><b>اكتشف</b><small>اشرح لي شيئًا جديدًا</small>
+        </button>
+        <button class="suggestion" data-prompt="ساعدني في كتابة كود احترافي">
+          <span>⌘</span><b>البرمجة</b><small>حوّل فكرتك إلى كود</small>
+        </button>
+        <button class="suggestion" data-prompt="اكتب لي نصًا إبداعيًا ومميزًا">
+          <span>✧</span><b>الكتابة</b><small>اصنع نصًا رائعًا</small>
+        </button>
+        <button class="suggestion" data-prompt="ترجم النص التالي إلى الإنجليزية">
+          <span>文</span><b>الترجمة</b><small>تحدث بلغات العالم</small>
+        </button>
+      </div>
+    </section>
+
+    <section class="messages" id="messages" aria-live="polite" hidden></section>
+
+    <div class="typing" id="typing" hidden>
+      <span></span><span></span><span></span>
+      <small>AL3M AI يفكر...</small>
+    </div>
+  </main>
+
+  <footer class="composer-area">
+    <form class="composer" id="chatForm">
+      <textarea
+        id="prompt"
+        rows="1"
+        maxlength="12000"
+        placeholder="اكتب فكرتك هنا..."
+        aria-label="اكتب رسالتك"
+        required
+      ></textarea>
+      <button class="send-btn" id="sendButton" type="submit" aria-label="إرسال الرسالة">
+        <span>↑</span>
+      </button>
+    </form>
+    <div class="composer-info">
+      <span>✦ AL3M AI STUDIO</span>
+      <span>قد يخطئ الذكاء الاصطناعي أحيانًا</span>
+    </div>
+  </footer>
+
+  <section class="announcement-screen" id="announcementScreen" hidden>
+    <div class="announcement-panel">
+      <button class="close-btn" id="closeAnnouncements" aria-label="إغلاق">×</button>
+      <div class="announcement-icon">✦</div>
+      <p class="eyebrow">AL3M AI STUDIO</p>
+      <h2>الإعلانات والإشعارات</h2>
+      <div id="announcementList" class="announcement-list">
+        <p class="empty-announcements">جارٍ تحميل الإعلانات...</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="historyScreen" class="announcement-screen" hidden>
+    <div class="announcement-panel">
+      <button class="close-btn" id="closeHistory" aria-label="إغلاق">×</button>
+      <div class="announcement-icon">◷</div>
+      <p class="eyebrow">AL3M AI STUDIO</p>
+      <h2>سجل المحادثات</h2>
+      <p class="welcome-text">اختر محادثة سابقة للعودة إليها.</p>
+      <div id="historyList" class="announcement-list">
+        <p>جارٍ تحميل المحادثات...</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+</body>
+</html>
