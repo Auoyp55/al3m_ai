@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#080610">
+<title>AL3M AI STUDIO — AETHER ACCESS</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg:#080610;
+  --panel:rgba(19,14,34,.88);
+  --purple:#a855f7;
+  --cyan:#35e7ff;
+  --text:#f5f0ff;
+  --muted:#a49bb8;
+  --border:rgba(185,133,255,.18);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;min-height:100vh;display:grid;place-items:center;
+  padding:22px;background:
+  radial-gradient(ellipse at 15% 15%,#31105255,transparent 45%),
+  radial-gradient(ellipse at 85% 85%,#083c5550,transparent 42%),var(--bg);
+  color:var(--text);font-family:system-ui,-apple-system,sans-serif;
+}
+.card{
+  width:min(100%,440px);padding:32px;border:1px solid var(--border);
+  border-radius:25px;background:var(--panel);
+  box-shadow:0 25px 100px #0008,0 0 45px #a855f710;
+  backdrop-filter:blur(20px);
+}
+.brand{text-align:center;margin-bottom:28px}
+.logo{
+  width:65px;height:65px;margin:0 auto 17px;border-radius:20px;
+  display:grid;place-items:center;font-size:30px;font-weight:900;
+  color:white;background:linear-gradient(135deg,#a855f7,#5425a8);
+  box-shadow:0 0 35px #a855f744;
+}
+h1{font-size:23px;margin:0;letter-spacing:1px}
+h1 span{color:var(--purple)}
+.subtitle{color:var(--muted);font-size:13px;margin-top:9px}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:23px}
+.tab{
+  padding:12px;border:1px solid var(--border);border-radius:12px;
+  background:#ffffff05;color:var(--muted);font-size:14px;cursor:pointer
+}
+.tab.active{background:#a855f71b;color:#fff;border-color:#a855f788}
+.field{margin-bottom:16px}
+label{display:block;font-size:13px;margin-bottom:8px;color:#d9cbed}
+input{
+  width:100%;padding:14px;border-radius:12px;border:1px solid var(--border);
+  outline:none;background:#090711;color:white;font-size:14px;
+  transition:border .2s,box-shadow .2s
+}
+input:focus{border-color:var(--purple);box-shadow:0 0 0 3px #a855f71c}
+.submit{
+  width:100%;padding:14px;border:0;border-radius:12px;margin-top:8px;
+  background:linear-gradient(100deg,#9333ea,#6d42e8);
+  color:white;font-size:15px;font-weight:800;cursor:pointer;
+  box-shadow:0 8px 25px #7c3aed30
+}
+.submit:disabled{opacity:.6;cursor:wait}
+.status{
+  display:none;padding:12px;border-radius:10px;margin-bottom:16px;
+  font-size:13px;line-height:1.7;overflow-wrap:anywhere
+}
+.status.error{display:block;background:#ff315b12;border:1px solid #ff315b40;color:#ff9bad}
+.status.success{display:block;background:#21d6a012;border:1px solid #21d6a040;color:#8fffd5}
+.footer{text-align:center;color:var(--muted);font-size:11px;margin-top:23px}
+.hidden{display:none!important}
+
+/* AL3M AI STUDIO — تحسينات الواجهة والثيمات */
+body {
+  background:
+    radial-gradient(ellipse at 12% 12%, color-mix(in srgb, var(--accent) 17%, transparent), transparent 45%),
+    radial-gradient(ellipse at 88% 88%, color-mix(in srgb, var(--cyan) 12%, transparent), transparent 42%),
+    var(--bg);
+  transition: background .3s ease, color .3s ease;
+}
+.card {
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  border-color: var(--border);
+  box-shadow: 0 25px 100px #0005, 0 0 45px color-mix(in srgb, var(--accent) 12%, transparent);
+  animation: cardAppear .55s ease both;
+}
+.logo {
+  background: linear-gradient(135deg, var(--accent), var(--glow));
+  box-shadow: 0 0 35px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+h1 span { color: var(--accent); }
+label { color: var(--text); }
+input {
+  background: var(--bg);
+  color: var(--text);
+  border-color: var(--border);
+}
+input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.tab { color: var(--muted); border-color: var(--border); }
+.tab.active {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--text);
+  border-color: var(--accent);
+}
+.submit {
+  background: linear-gradient(110deg, var(--accent), var(--glow));
+  box-shadow: 0 8px 25px color-mix(in srgb, var(--accent) 24%, transparent);
+  transition: transform .2s ease, filter .2s ease;
+}
+.submit:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.password-wrap { position: relative; }
+.password-wrap input { padding-left: 76px; }
+.password-toggle {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 9px;
+  background: var(--surface2);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+.forgot-password {
+  display: block;
+  margin: 10px 0 0 auto;
+  padding: 3px 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+.forgot-password:hover { text-decoration: underline; }
+@keyframes cardAppear {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (max-width: 480px) {
+  body { padding: 78px 14px 22px; }
+  .card { padding: 25px 20px; border-radius: 21px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card { animation: none; }
+  *, *::before, *::after { transition-duration: .01ms !important; }
+}
+\n</style>
+  <script src="/js/themes.js" defer></script>
+</head>
+<body>
+<main class="card">
+  <header class="brand">
+    <div class="logo">A</div>
+    <h1>AL3M AI <span>STUDIO</span></h1>
+    <div class="subtitle">AETHER ACCESS · مساحة ذكائك الخاصة</div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" id="loginTab" type="button">تسجيل الدخول</button>
+    <button class="tab" id="signupTab" type="button">إنشاء حساب</button>
+  </div>
+
+  <div id="status" class="status" role="status" aria-live="polite"></div>
+
+  <form id="authForm">
+    <div id="usernameField" class="field hidden">
+      <label for="username">اسم المستخدم</label>
+      <input id="username" name="username" autocomplete="username"
+        minlength="3" maxlength="24" pattern="[A-Za-z0-9_]+"
+        placeholder="AL3M_USER">
+    </div>
+
+    <div class="field">
+      <label for="email">البريد الإلكتروني</label>
+      <input id="email" name="email" type="email" autocomplete="email"
+        maxlength="254" placeholder="you@example.com" required>
+    </div>
+
+    <div class="field">
+      <label for="password">كلمة المرور</label>
+      <div class="password-wrap">
+        <input id="password" name="password" type="password"
+          autocomplete="current-password" minlength="10" maxlength="128"
+          placeholder="10 أحرف على الأقل" required>
+        <button type="button" id="togglePassword"
+          class="password-toggle" aria-label="إظهار كلمة المرور"
+          aria-pressed="false">إظهار</button>
+      </div>
+      <button type="button" id="forgotPassword" class="forgot-password">
+        نسيت كلمة المرور؟
+      </button>
+    </div>
+
+    <button class="submit" id="submitButton" type="submit">
+      تسجيل الدخول
+    </button>
+  </form>
+
+  <div class="footer">AETHER SYSTEM · جلسات آمنة · AL3M&ALFERGANE</div>
+</main>
+
+<script>
+'use strict';
+
+const $ = id => document.getElementById(id);
+let mode = 'login';
+
+function showStatus(message, type) {
+  const box = $('status');
+  box.className = 'status ' + type;
+  box.textContent = message;
+}
+
+function setMode(nextMode) {
+  mode = nextMode;
+  const signup = mode === 'signup';
+
+  $('usernameField').classList.toggle('hidden', !signup);
+  $('username').required = signup;
+  $('password').autocomplete = signup ? 'new-password' : 'current-password';
+  $('loginTab').classList.toggle('active', !signup);
+  $('signupTab').classList.toggle('active', signup);
+  $('submitButton').textContent = signup ? 'إنشاء حساب آمن' : 'تسجيل الدخول';
+  $('status').className = 'status';
+}
+
+$('loginTab').addEventListener('click', () => setMode('login'));
+$('signupTab').addEventListener('click', () => setMode('signup'));
+
+$('togglePassword').addEventListener('click', () => {
+  const input = $('password');
+  const visible = input.type === 'password';
+  input.type = visible ? 'text' : 'password';
+  $('togglePassword').textContent = visible ? 'إخفاء' : 'إظهار';
+  $('togglePassword').setAttribute('aria-label',
+    visible ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور');
+  $('togglePassword').setAttribute('aria-pressed', String(visible));
+});
+
+$('forgotPassword').addEventListener('click', () => {
+  showStatus('استعادة كلمة المرور غير مفعّلة حاليًا. لم يتم إرسال أي رسالة. نحتاج إلى إعداد خدمة استعادة آمنة أولًا.', 'error');
+});
+
+$('authForm').addEventListener('submit', async event => {
+  event.preventDefault();
+
+  const button = $('submitButton');
+  button.disabled = true;
+  button.textContent = 'جارٍ التحقق...';
+  $('status').className = 'status';
+
+  const payload = {
+    email: $('email').value.trim(),
+    password: $('password').value
+  };
+
+  if (mode === 'signup') {
+    payload.username = $('username').value.trim();
+  }
+
+  try {
+    const response = await fetch('/api/auth/' + mode, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.error || 'تعذر إكمال العملية.');
+    }
+
+    showStatus('تم التحقق بنجاح. جارٍ فتح الاستوديو...', 'success');
+    location.replace('/');
+  } catch (error) {
+    showStatus(error.message || 'تعذر الاتصال بالخادم.', 'error');
+  } finally {
+    button.disabled = false;
+    button.textContent = mode === 'signup' ? 'إنشاء حساب آمن' : 'تسجيل الدخول';
+  }
+});
+
+(async () => {
+  try {
+    const response = await fetch('/api/auth/me', {
+      credentials: 'same-origin'
+    });
+    if (response.ok) location.replace('/');
+  } catch {}
+})();
+</script>
+</body>
+</html>

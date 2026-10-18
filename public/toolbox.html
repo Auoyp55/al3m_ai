@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#090710">
+<title>AL3M | AI TOOLBOX</title>
+<style>
+:root{--bg:#090710;--panel:#12101c;--border:#282238;--purple:#a855f7;--cyan:#35e7ff;--text:#f5f1ff;--muted:#9690a8}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 50% -20%,#352052 0,transparent 55%),var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif;min-height:100vh}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
+header{max-width:1150px;margin:auto;padding:24px 22px;display:flex;align-items:center;justify-content:space-between;gap:15px;border-bottom:1px solid #ffffff0c}
+.logo{font-weight:900;font-size:20px;letter-spacing:1px}.logo span{color:var(--purple)}
+.badge{border:1px solid #35e7ff40;color:var(--cyan);border-radius:30px;padding:7px 12px;font-size:11px}
+main{max-width:1150px;margin:auto;padding:35px 22px 70px}
+.hero{text-align:center;padding:28px 0 35px}
+.eyebrow{color:var(--cyan);font-size:12px;letter-spacing:3px;font-weight:800}
+h1{font-size:clamp(32px,6vw,58px);line-height:1.2;margin:14px 0;background:linear-gradient(100deg,#fff,#cba1ff,#35e7ff);background-clip:text;color:transparent}
+.hero p{color:var(--muted);max-width:550px;margin:0 auto;line-height:1.9}
+.search{max-width:500px;margin:24px auto 0}
+input,textarea,select{width:100%;background:#0b0912;border:1px solid var(--border);border-radius:12px;padding:13px;color:var(--text);outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--purple)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px}
+.card{background:linear-gradient(145deg,#171321,#100e18);border:1px solid var(--border);border-radius:19px;padding:21px;min-width:0;transition:.2s}
+.card:hover{border-color:#a855f766;transform:translateY(-2px)}
+.card-head{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.icon{width:43px;height:43px;display:grid;place-items:center;background:#a855f71b;border:1px solid #a855f733;border-radius:13px;font-size:22px}
+h2{font-size:17px;margin:0 0 4px}.sub{font-size:11px;color:var(--muted)}
+label{display:block;font-size:12px;color:#c4bdd3;margin:12px 0 7px}
+textarea{resize:vertical;min-height:86px;line-height:1.8}
+.row{display:flex;gap:9px;margin-top:12px}
+.btn{border:0;border-radius:11px;padding:11px 15px;font-weight:750;background:linear-gradient(100deg,var(--purple),#7735d5);color:white}
+.btn.secondary{background:#211b30;border:1px solid #39304d;color:#e5dcf8}
+.btn:active{transform:scale(.98)}
+.result{margin-top:14px;min-height:42px;padding:12px;background:#090710;border:1px solid #282238;border-radius:12px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.9;font-size:13px;color:#e5ddf5}
+.palette{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin-top:14px}
+.swatch{height:75px;border-radius:10px;border:1px solid #ffffff20;display:flex;align-items:end;justify-content:center;padding:5px;font-size:10px;color:white;text-shadow:0 1px 4px #000;cursor:pointer}
+footer{text-align:center;color:#655d75;font-size:11px;margin-top:35px;letter-spacing:1px}
+.empty{display:none;text-align:center;color:var(--muted);padding:25px}
+@media(max-width:650px){.grid{grid-template-columns:1fr}main{padding:20px 14px 50px}header{padding:18px 14px}.card{padding:17px}.hero{padding-top:18px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">AL3M <span>TOOLBOX</span></div>
+  <div class="badge">● TOOLS READY</div>
+</header>
+<main>
+  <section class="hero">
+    <div class="eyebrow">YOUR CREATIVE WORKSPACE</div>
+    <h1>AI TOOLBOX</h1>
+    <p>صندوق أدواتك الإبداعي. زخرفة، أسماء، بايو، ألوان وأدوات Discord في مكان واحد.</p>
+    <div class="search"><input id="search" placeholder="ابحث عن أداة..."></div>
+  </section>
+
+  <section class="grid" id="grid">
+    <article class="card" data-name="زخرفة النصوص زخرفة أسماء text decorator">
+      <div class="card-head"><div class="icon">✧</div><div><h2>زخرفة النصوص</h2><div class="sub">TEXT DECORATOR</div></div></div>
+      <label>اكتب الاسم أو النص</label>
+      <input id="decorInput" placeholder="مثال: AL3M">
+      <div class="row"><button class="btn" onclick="decorate()">زخرف النص</button><button class="btn secondary" onclick="copy('decorResult')">نسخ</button></div>
+      <div class="result" id="decorResult">ستظهر الزخارف هنا...</div>
+    </article>
+
+    <article class="card" data-name="بايو bio profile">
+      <div class="card-head"><div class="icon">👑</div><div><h2>مولّد البايو</h2><div class="sub">BIO GENERATOR</div></div></div>
+      <label>الاسم أو اللقب</label><input id="bioName" placeholder="AL3M">
+      <label>النمط</label>
+      <select id="bioStyle"><option value="dark">غامض وفخم</option><option value="gaming">ألعاب</option><option value="minimal">بسيط</option><option value="cyber">سايبري</option></select>
+      <div class="row"><button class="btn" onclick="makeBio()">إنشاء بايو</button><button class="btn secondary" onclick="copy('bioResult')">نسخ</button></div>
+      <div class="result" id="bioResult">اختر النمط وأنشئ بايو...</div>
+    </article>
+
+    <article class="card" data-name="مولد أسماء name generator projects server">
+      <div class="card-head"><div class="icon">⚡</div><div><h2>مولّد الأسماء</h2><div class="sub">NAME GENERATOR</div></div></div>
+      <label>نوع المشروع</label>
+      <select id="nameType"><option value="server">سيرفر Discord</option><option value="web">موقع إلكتروني</option><option value="brand">علامة تجارية</option><option value="gaming">فريق ألعاب</option></select>
+      <label>كلمة مفضلة (اختياري)</label><input id="nameWord" placeholder="NEXUS">
+      <div class="row"><button class="btn" onclick="makeNames()">ولّد أسماء</button><button class="btn secondary" onclick="copy('nameResult')">نسخ</button></div>
+      <div class="result" id="nameResult">أسماء جديدة في انتظارك...</div>
+    </article>
+
+    <article class="card" data-name="ألوان color palette design">
+      <div class="card-head"><div class="icon">🎨</div><div><h2>استوديو الألوان</h2><div class="sub">COLOR STUDIO</div></div></div>
+      <label>النمط اللوني</label>
+      <select id="colorStyle"><option value="purple">بنفسجي فاخر</option><option value="cyber">سايبري</option><option value="ocean">محيطي</option><option value="fire">ناري</option><option value="forest">غابة</option></select>
+      <div class="row"><button class="btn" onclick="makeColors()">إنشاء لوحة</button><button class="btn secondary" onclick="copyPalette()">نسخ الأكواد</button></div>
+      <div class="palette" id="palette"></div>
+      <div class="result" id="colorResult">اضغط لإنشاء لوحة ألوان.</div>
+    </article>
+
+    <article class="card" data-name="discord قوانين اعلان وصف سيرفر">
+      <div class="card-head"><div class="icon">💬</div><div><h2>Discord Toolbox</h2><div class="sub">SERVER CONTENT</div></div></div>
+      <label>نوع المحتوى</label>
+      <select id="discordType"><option value="ad">إعلان سيرفر</option><option value="rules">قوانين السيرفر</option><option value="welcome">رسالة ترحيب</option><option value="update">إعلان تحديث</option></select>
+      <label>اسم السيرفر وتفاصيله</label><textarea id="discordInfo" placeholder="اسم السيرفر، نوعه، مميزاته..."></textarea>
+      <div class="row"><button class="btn" onclick="makeDiscord()">إنشاء المحتوى</button><button class="btn secondary" onclick="copy('discordResult')">نسخ</button></div>
+      <div class="result" id="discordResult">سيظهر المحتوى هنا...</div>
+    </article>
+
+    <article class="card" data-name="عداد أحرف كلمات character counter">
+      <div class="card-head"><div class="icon">⌗</div><div><h2>محلّل النصوص</h2><div class="sub">TEXT COUNTER</div></div></div>
+      <label>ألصق النص هنا</label><textarea id="countInput" placeholder="اكتب أو ألصق النص..." oninput="countText()"></textarea>
+      <div class="result" id="countResult">الأحرف: 0 · الكلمات: 0 · الأسطر: 0</div>
+      <div class="row"><button class="btn secondary" onclick="clearCounter()">مسح النص</button><button class="btn secondary" onclick="copy('countInput')">نسخ النص</button></div>
+    </article>
+  </section>
+  <div class="empty" id="empty">لم نعثر على أداة بهذا الاسم.</div>
+  <footer>AL3M&ALFERGANE · AI TOOLBOX · CREATIVE TOOLS</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+async function copy(id){
+  const el=$(id);const text=el.value!==undefined?el.value:el.innerText;
+  if(!text||text.includes('ستظهر')||text.includes('في انتظارك')){alert('أنشئ المحتوى أولاً');return}
+  try{await navigator.clipboard.writeText(text);alert('تم النسخ بنجاح ✓')}
+  catch{const t=document.createElement('textarea');t.value=text;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();alert('تم النسخ ✓')}
+}
+function decorate(){
+ const s=$('decorInput').value.trim();if(!s)return alert('اكتب نصاً أولاً');
+ $('decorResult').textContent=[
+ '꧁༺ '+s+' ༻꧂','『 '+s+' 』','亗 '+s+' 亗','𓆩 '+s+' 𓆪',
+ '乂 '+s+' 乂','メ '+s+' メ','★彡 '+s+' 彡★','◥ '+s+' ◤',
+ '♛ '+s+' ♛','⫷ '+s+' ⫸','【﻿'+s+'】','༒ '+s+' ༒'
+ ].join('\n');
+}
+function makeBio(){
+ const n=$('bioName').value.trim()||'AL3M';let a=[];
+ const styles={
+ dark:[`𓆩 ${n} 𓆪\nSilent mind. Infinite ambition.`,`♛ ${n}\nلا أبحث عن الضوء، أصنع عالمي بنفسي.`,`『 ${n} 』\nالغموض أسلوبي والطموح طريقي.`],
+ gaming:[`亗 ${n} 亗\nPlay smart. Win hard.`,`🎮 ${n}\nNo limits. Only levels.`,`⚡ ${n}\nBorn to play · Built to win`],
+ minimal:[`${n}.\nLess talk. More action.`,`— ${n}\nCreating my own path.`,`✦ ${n}\nFocused on what matters.`],
+ cyber:[`⫷ ${n} ⫸\nSYSTEM ONLINE // LIMITS OFF`,`⌘ ${n}\nDigital soul. Human ambition.`,`▰ ${n} // ACCESS GRANTED\nBeyond the ordinary.`]};
+ a=styles[$('bioStyle').value];$('bioResult').textContent=a[Math.floor(Math.random()*a.length)];
+}
+function makeNames(){
+ const w=$('nameWord').value.trim().toUpperCase();const type=$('nameType').value;
+ const parts={server:['NEXORA','VOID','NEXUS','HAVEN','ORBIT','VORTEX','ECLIPSE','ZENITH','NOVA','LEGION'],web:['PIXORA','CIRRUS','NEXORA','QUANTIX','LUMORA','VEXEL','ALTRIX','KRYPT','NEBULA','FLUX'],brand:['VELORA','ZENTRO','AVYRON','ELIXOR','VANTEX','ORVIA','LUXEN','ZORIX','AUREX','NOVARA'],gaming:['NIGHTFALL','DARKCORE','SHADOWX','RAVEN','WARZONE','PHANTOM','REAPER','ONYX','BLAZE','HAVOC']};
+ const suffix={server:['HUB','NETWORK','COMMUNITY','ZONE','HQ'],web:['LABS','STUDIO','OS','TECH','DEV'],brand:['CO','LUX','WORKS','PRIME','X'],gaming:['ESPORTS','SQUAD','CLAN','GG','UNIT']};
+ const base=parts[type],suf=suffix[type];let out=[];
+ for(let i=0;i<12;i++){let b=base[Math.floor(Math.random()*base.length)];if(w)b=w+' '+b;else if(Math.random()>.45)b+=' '+suf[Math.floor(Math.random()*suf.length)];if(!out.includes(b))out.push(b)}
+ $('nameResult').textContent=out.join('\n');
+}
+let currentPalette=[];
+function makeColors(){
+ const sets={purple:['#090710','#211333','#6D28D9','#A855F7','#35E7FF'],cyber:['#080B12','#111827','#00F5D4','#35E7FF','#FF3CAC'],ocean:['#071923','#123C50','#176B87','#64CCC5','#DAFFFB'],fire:['#160A0A','#471515','#B91C1C','#F97316','#FDE68A'],forest:['#07140E','#123524','#236B45','#65A875','#D7F5D0']};
+ currentPalette=sets[$('colorStyle').value];$('palette').innerHTML='';
+ currentPalette.forEach(c=>{const d=document.createElement('div');d.className='swatch';d.style.background=c;d.textContent=c;d.title='اضغط لنسخ '+c;d.onclick=async()=>{try{await navigator.clipboard.writeText(c);alert('تم نسخ '+c)}catch{alert(c)}};$('palette').appendChild(d)});
+ $('colorResult').textContent='Primary: '+currentPalette[3]+'\nAccent: '+currentPalette[4]+'\nBackground: '+currentPalette[0]+'\nاضغط على أي لون لنسخ كوده.';
+}
+function copyPalette(){if(!currentPalette.length)makeColors();copy('colorResult')}
+function makeDiscord(){
+ const name=$('discordInfo').value.trim()||'مجتمعنا';const t=$('discordType').value;let s='';
+ if(t==='ad')s=`╭━━━〔 ✦ ${name} ✦ 〕━━━╮\n\n✧ مجتمع مميز بانتظارك!\n✧ فعاليات وتفاعل مستمر\n✧ تعرّف على أعضاء جدد\n✧ شاركنا رحلتك وكن جزءاً من المجتمع\n\n╰━━━━━━━━━━━━━━━━━━╯`;
+ if(t==='rules')s=`╭━━〔 📜 قوانين ${name} 〕━━╮\n\n١. احترم جميع الأعضاء.\n٢. يمنع السب والإساءة والتحرش.\n٣. يمنع الإزعاج والتكرار المفرط.\n٤. لا ترسل روابط مشبوهة أو ضارة.\n٥. التزم بتعليمات الإدارة.\n٦. استخدم كل قناة للغرض المخصص لها.\n\nبوجودك معنا أنت توافق على القوانين.`;
+ if(t==='welcome')s=`╭━━━〔 ✨ أهلاً بك 〕━━━╮\n\nمرحباً بك في ${name}!\nسعداء بانضمامك إلى مجتمعنا.\n\n✦ اطلع على القوانين\n✦ تعرّف على القنوات\n✦ شاركنا وابدأ رحلتك معنا\n\nنتمنى لك وقتاً ممتعاً!`;
+ if(t==='update')s=`╭━━〔 📢 تحديث جديد 〕━━╮\n\nيسرّنا الإعلان عن تحديث ${name}!\n\n✦ تحسينات جديدة\n✦ تطوير تجربة الأعضاء\n✦ المزيد من المميزات قريباً\n\nشكراً لدعمكم المستمر ❤️`;
+ $('discordResult').textContent=s;
+}
+function countText(){const s=$('countInput').value;$('countResult').textContent=`الأحرف مع المسافات: ${s.length}\nالأحرف بدون مسافات: ${s.replace(/\s/g,'').length}\nالكلمات: ${(s.trim().match(/\S+/g)||[]).length}\nالأسطر: ${s?s.split(/\n/).length:0}`;}
+function clearCounter(){$('countInput').value='';countText()}
+$('search').addEventListener('input',()=>{
+ const q=$('search').value.trim().toLowerCase();let shown=0;
+ document.querySelectorAll('.card').forEach(c=>{const yes=c.dataset.name.toLowerCase().includes(q);c.style.display=yes?'':'none';if(yes)shown++});
+ $('empty').style.display=shown?'none':'block';
+});
+makeColors();
+</script>
+</body>
+</html>

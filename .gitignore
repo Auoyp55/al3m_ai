@@ -1,0 +1,25 @@
+.env
+.env.*
+!.env.example
+
+node_modules/
+data/
+*.db
+*.db-shm
+*.db-wal
+
+server.log
+*.log
+
+backups/
+*.backup*
+*.bak
+
+.DS_Store
+
+# Local backups and development copies
+*-backup*
+*.before-*
+*.copy-backup*
+*.bak
+backups/
