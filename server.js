@@ -5,11 +5,7 @@ const path = require('path');
 const db = require('./server/database');
 const auth = require('./server/auth-postgres');
 
-// AETHER_USER_ID_COLUMN
-const conversationColumns = db.pragma('table_info(conversations)').rows;
-if (!conversationColumns.some(c => c.name === 'user_id')) {
-  db.exec('ALTER TABLE conversations ADD COLUMN user_id INTEGER');
-}
+// Conversations use PostgreSQL; skip the legacy SQLite migration.
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
