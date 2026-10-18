@@ -3,7 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const db = require('./server/database');
-const auth = require('./server/auth');
+const auth = require('./server/auth-postgres');
 
 // AETHER_USER_ID_COLUMN
 const conversationColumns = db.pragma('table_info(conversations)').rows;
@@ -244,17 +244,25 @@ function setSessionCookie(req, res, token, maxAge) {
   res.setHeader('Set-Cookie', parts.join('; '));
 }
 
-function requireAuth(req, res, next) {
-  const token = readSessionToken(req);
-  const user = token ? auth.getSession(token) : null;
-  if (!user) {
-    return res.status(401).json({
+async function requireAuth(req, res, next) {
+  try {
+    const token = readSessionToken(req);
+    const user = token ? await auth.getSession(token) : null;
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        error: 'سجّل الدخول أولاً.'
+      });
+    }
+    req.user = user;
+    next();
+  } catch (error) {
+    console.error('Authentication error:', error.message);
+    res.status(500).json({
       success: false,
-      error: 'سجّل الدخول أولاً.'
+      error: 'تعذر التحقق من تسجيل الدخول.'
     });
   }
-  req.user = user;
-  next();
 }
 
 app.post('/api/auth/signup', rateLimit, async (req, res) => {
@@ -264,7 +272,7 @@ app.post('/api/auth/signup', rateLimit, async (req, res) => {
       email: req.body?.email,
       password: req.body?.password
     });
-    const session = auth.createSession(user.id);
+    const session = await auth.createSession(user.id);
     setSessionCookie(req, res, session.token, auth.SESSION_DAYS * 86400);
     res.status(201).json({ success: true, user });
   } catch (error) {
@@ -288,7 +296,7 @@ app.post('/api/auth/login', rateLimit, async (req, res) => {
         error: 'البريد الإلكتروني أو كلمة المرور غير صحيحة.'
       });
     }
-    const session = auth.createSession(user.id);
+    const session = await auth.createSession(user.id);
     setSessionCookie(req, res, session.token, auth.SESSION_DAYS * 86400);
     res.json({ success: true, user });
   } catch (error) {
@@ -300,20 +308,36 @@ app.post('/api/auth/login', rateLimit, async (req, res) => {
   }
 });
 
-app.get('/api/auth/me', (req, res) => {
-  const token = readSessionToken(req);
-  const user = token ? auth.getSession(token) : null;
-  if (!user) {
-    return res.status(401).json({ success: false, error: 'غير مسجل الدخول.' });
+app.get('/api/auth/me', async (req, res) => {
+  try {
+    const token = readSessionToken(req);
+    const user = token ? await auth.getSession(token) : null;
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'غير مسجل الدخول.' });
+    }
+    res.json({ success: true, user });
+  } catch (error) {
+    console.error('Auth session error:', error.message);
+    res.status(500).json({
+      success: false,
+      error: 'تعذر التحقق من الجلسة.'
+    });
   }
-  res.json({ success: true, user });
 });
 
-app.post('/api/auth/logout', (req, res) => {
-  const token = readSessionToken(req);
-  if (token) auth.revokeSession(token);
-  setSessionCookie(req, res, '', 0);
-  res.json({ success: true });
+app.post('/api/auth/logout', async (req, res) => {
+  try {
+    const token = readSessionToken(req);
+    if (token) await auth.revokeSession(token);
+    setSessionCookie(req, res, '', 0);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Logout error:', error.message);
+    res.status(500).json({
+      success: false,
+      error: 'تعذر تسجيل الخروج حالياً.'
+    });
+  }
 });
 
 
@@ -509,39 +533,43 @@ app.put('/api/admin/ai-settings', (req, res) => {
 
 
 // AETHER_ADMIN_USERS
-app.get('/api/admin/users', (req, res) => {
+app.get('/api/admin/users', async (req, res) => {
   try {
     const search = String(req.query.search || '').trim().slice(0, 80);
-
-    let users;
+    const params = [];
+    let where = '';
 
     if (search) {
-      const pattern = '%' + search.replace(/[\\%_]/g, '\\$&') + '%';
-
-      users = db.prepare(`
-        SELECT u.id, u.username, u.email, u.created_at,
-          (SELECT COUNT(*) FROM conversations c
-           WHERE c.user_id = u.id) AS conversations,
-          (SELECT COUNT(*) FROM sessions s
-           WHERE s.user_id = u.id AND s.expires_at > ?) AS active_sessions
-        FROM users u
-        WHERE u.username LIKE ? ESCAPE '\\'
-           OR u.email LIKE ? ESCAPE '\\'
-        ORDER BY u.id DESC
-        LIMIT 100
-      `).all(Date.now(), pattern, pattern);
-    } else {
-      users = db.prepare(`
-        SELECT u.id, u.username, u.email, u.created_at,
-          (SELECT COUNT(*) FROM conversations c
-           WHERE c.user_id = u.id) AS conversations,
-          (SELECT COUNT(*) FROM sessions s
-           WHERE s.user_id = u.id AND s.expires_at > ?) AS active_sessions
-        FROM users u
-        ORDER BY u.id DESC
-        LIMIT 100
-      `).all(Date.now());
+      params.push('%' + search + '%');
+      where = 'WHERE username ILIKE $1 OR email ILIKE $1';
     }
+
+    const result = await require('./server/postgres').query(
+      `SELECT
+         u.id, u.username, u.email, u.created_at,
+         (SELECT COUNT(*) FROM sessions s
+          WHERE s.user_id = u.id AND s.expires_at > NOW()) AS active_sessions
+       FROM users u
+       ${where}
+       ORDER BY u.id DESC
+       LIMIT 100`,
+      params
+    );
+
+    const users = result.rows.map(user => {
+      const local = db.prepare(
+        'SELECT COUNT(*) AS total FROM conversations WHERE user_id = ?'
+      ).get(Number(user.id));
+
+      return {
+        id: Number(user.id),
+        username: user.username,
+        email: user.email,
+        created_at: user.created_at,
+        conversations: Number(local?.total || 0),
+        active_sessions: Number(user.active_sessions || 0)
+      };
+    });
 
     res.json({ success: true, users });
   } catch (error) {
@@ -553,10 +581,8 @@ app.get('/api/admin/users', (req, res) => {
   }
 });
 
-
-
 // AETHER_ADMIN_DELETE_USER
-app.delete('/api/admin/users/:id', (req, res) => {
+app.delete('/api/admin/users/:id', async (req, res) => {
   const targetId = Number(req.params.id);
 
   if (!Number.isSafeInteger(targetId) || targetId < 1) {
@@ -566,78 +592,102 @@ app.delete('/api/admin/users/:id', (req, res) => {
     });
   }
 
-  if (targetId === req.user.id) {
+  if (targetId === Number(req.user.id)) {
     return res.status(400).json({
       success: false,
       error: 'لا يمكنك حذف حسابك الحالي.'
     });
   }
 
+  const { pool } = require('./server/postgres');
+  const client = await pool.connect();
+
   try {
-    const target = db.prepare(
-      'SELECT id, username FROM users WHERE id = ?'
-    ).get(targetId);
+    await client.query('BEGIN');
+
+    const targetResult = await client.query(
+      'SELECT id, username FROM users WHERE id = $1 FOR UPDATE',
+      [targetId]
+    );
+
+    const target = targetResult.rows[0];
 
     if (!target) {
+      await client.query('ROLLBACK');
       return res.status(404).json({
         success: false,
         error: 'المستخدم غير موجود.'
       });
     }
 
+    // نتحقق من الدور المحلي لأن صلاحيات الأدمن ما زالت في SQLite.
     const targetAdmin = db.prepare(
       'SELECT user_id FROM admin_roles WHERE user_id = ?'
     ).get(targetId);
 
     if (targetAdmin) {
+      await client.query('ROLLBACK');
       return res.status(403).json({
         success: false,
         error: 'لا يمكن حذف حساب لديه صلاحيات إدارية.'
       });
     }
 
-    db.transaction([
-      {
-        sql: `DELETE FROM messages
-              WHERE conversation_id IN (
-                SELECT id FROM conversations WHERE user_id = ?
-              )`,
-        params: [targetId]
-      },
-      {
-        sql: 'DELETE FROM conversations WHERE user_id = ?',
-        params: [targetId]
-      },
-      {
-        sql: 'DELETE FROM sessions WHERE user_id = ?',
-        params: [targetId]
-      },
-      {
-        sql: `INSERT INTO admin_audit_logs
-              (actor_id, action, target_id, details)
-              VALUES (?, 'user_deleted', ?, ?)`,
-        params: [req.user.id, targetId, 'Deleted username: ' + target.username]
-      },
-      {
-        sql: 'DELETE FROM users WHERE id = ?',
-        params: [targetId]
-      }
-    ]);
+    await client.query(
+      'DELETE FROM messages WHERE conversation_id IN (SELECT id FROM conversations WHERE user_id = $1)',
+      [targetId]
+    );
 
-    res.json({
+    await client.query(
+      'DELETE FROM conversations WHERE user_id = $1',
+      [targetId]
+    );
+
+    await client.query(
+      'DELETE FROM sessions WHERE user_id = $1',
+      [targetId]
+    );
+
+    await client.query(
+      'DELETE FROM users WHERE id = $1',
+      [targetId]
+    );
+
+    await client.query('COMMIT');
+
+    // سجل التدقيق محلي مؤقتًا؛ لا نخلط UUID مع أرقام المستخدمين.
+    try {
+      db.prepare(`
+        INSERT INTO admin_audit_logs
+          (actor_id, action, target_id, details)
+        VALUES (?, 'user_deleted', ?, ?)
+      `).run(
+        Number(req.user.id),
+        targetId,
+        'Deleted username: ' + target.username
+      );
+    } catch (auditError) {
+      console.error('Audit log warning:', auditError.message);
+    }
+
+    return res.json({
       success: true,
       message: 'تم حذف المستخدم ومحادثاته وجلساته.'
     });
   } catch (error) {
+    try {
+      await client.query('ROLLBACK');
+    } catch (_) {}
+
     console.error('Admin delete user error:', error.message);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      error: 'فشل حذف المستخدم؛ تم التراجع عن المعاملة.'
+      error: 'فشل حذف المستخدم.'
     });
+  } finally {
+    client.release();
   }
 });
-
-
 
 // AETHER_ADMIN_AUDIT_LOGS
 app.get('/api/admin/audit-logs', (req, res) => {
@@ -748,11 +798,15 @@ app.get('/api/admin/settings', (req, res) => {
 
 
 // AETHER_ADMIN_OVERVIEW
-app.get('/api/admin/overview', (req, res) => {
+app.get('/api/admin/overview', async (req, res) => {
   try {
-    const users = db.prepare(
-      'SELECT COUNT(*) AS total FROM users'
-    ).get().total;
+    const { pool } = require('./server/postgres');
+
+    const pgStats = await pool.query(`
+      SELECT
+        (SELECT COUNT(*) FROM users) AS users,
+        (SELECT COUNT(*) FROM sessions WHERE expires_at > NOW()) AS active_sessions
+    `);
 
     const conversations = db.prepare(
       'SELECT COUNT(*) AS total FROM conversations'
@@ -762,10 +816,6 @@ app.get('/api/admin/overview', (req, res) => {
       'SELECT COUNT(*) AS total FROM messages'
     ).get().total;
 
-    const sessions = db.prepare(
-      'SELECT COUNT(*) AS total FROM sessions WHERE expires_at > ?'
-    ).get(Date.now()).total;
-
     const setting = db.prepare(
       "SELECT value FROM site_settings WHERE key = 'maintenance_enabled'"
     ).get();
@@ -773,10 +823,10 @@ app.get('/api/admin/overview', (req, res) => {
     res.json({
       success: true,
       overview: {
-        users,
+        users: Number(pgStats.rows[0].users),
         conversations,
         messages,
-        activeSessions: sessions,
+        activeSessions: Number(pgStats.rows[0].active_sessions),
         maintenance: setting?.value === 'true'
       }
     });
@@ -792,39 +842,22 @@ app.get('/api/admin/overview', (req, res) => {
 
 app.use(['/api/conversations', '/api/chat'], requireAuth);
 
-app.get('/api/conversations', (req, res) => {
-  res.json({
-    success: true,
-    conversations: listConversations.all(req.user.id)
-  });
-});
+app.get('/api/conversations', async (req, res) => {
+  try {
+    const conversations = require('./server/conversations-postgres');
+    const rows = await conversations.listConversations(req.user.id);
 
-app.get('/api/conversations/:id/messages', (req, res) => {
-  const id = Number(req.params.id);
-
-  if (!Number.isSafeInteger(id) || id < 1) {
-    return res.status(400).json({
+    res.json({ success: true, conversations: rows });
+  } catch (error) {
+    console.error('List conversations error:', error.message);
+    res.status(500).json({
       success: false,
-      error: 'معرّف المحادثة غير صالح.'
+      error: 'تعذر تحميل المحادثات.'
     });
   }
-
-  if (!getConversation.get(id, req.user.id)) {
-    return res.status(404).json({
-      success: false,
-      error: 'المحادثة غير موجودة.'
-    });
-  }
-
-  res.json({
-    success: true,
-    conversationId: id,
-    messages: listMessages.all(id)
-  });
 });
 
-
-app.delete('/api/conversations/:id', (req, res) => {
+app.get('/api/conversations/:id/messages', async (req, res) => {
   const id = Number(req.params.id);
 
   if (!Number.isSafeInteger(id) || id < 1) {
@@ -835,25 +868,70 @@ app.delete('/api/conversations/:id', (req, res) => {
   }
 
   try {
-    if (!getConversation.get(id, req.user.id)) {
+    const conversations = require('./server/conversations-postgres');
+    const conversation = await conversations.getConversation(id, req.user.id);
+
+    if (!conversation) {
       return res.status(404).json({
         success: false,
         error: 'المحادثة غير موجودة.'
       });
     }
 
-    db.prepare('DELETE FROM messages WHERE conversation_id = ?').run(id);
-    db.prepare('DELETE FROM conversations WHERE id = ?').run(id);
+    const messages = await conversations.listMessages(id);
 
-    res.json({ success: true, deletedId: id });
+    res.json({
+      success: true,
+      conversationId: id,
+      messages
+    });
   } catch (error) {
-    console.error('Delete conversation error:', error);
+    console.error('List messages error:', error.message);
+    res.status(500).json({
+      success: false,
+      error: 'تعذر تحميل الرسائل.'
+    });
+  }
+});
+
+
+app.delete('/api/conversations/:id', async (req, res) => {
+  const id = Number(req.params.id);
+
+  if (!Number.isSafeInteger(id) || id < 1) {
+    return res.status(400).json({
+      success: false,
+      error: 'معرّف المحادثة غير صالح.'
+    });
+  }
+
+  try {
+    const { pool } = require('./server/postgres');
+    const result = await pool.query(
+      'DELETE FROM conversations WHERE id = $1 AND user_id = $2 RETURNING id',
+      [id, req.user.id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'المحادثة غير موجودة.'
+      });
+    }
+
+    res.json({
+      success: true,
+      deletedId: Number(result.rows[0].id)
+    });
+  } catch (error) {
+    console.error('Delete conversation error:', error.message);
     res.status(500).json({
       success: false,
       error: 'تعذر حذف المحادثة.'
     });
   }
 });
+
 
 app.post('/api/chat', rateLimit, async (req, res) => {
   try {
@@ -911,14 +989,14 @@ app.post('/api/chat', rateLimit, async (req, res) => {
       const title = message.replace(/\s+/g, ' ').slice(0, 70)
         || 'محادثة جديدة';
 
-      const result = createConversation.run(req.user.id, title);
-      conversationId = Number(result.lastInsertRowid);
+      const chatStore = require("./server/conversations-postgres");
+      conversationId = await chatStore.createConversation(req.user.id, title);
     } else {
       conversationId = Number(conversationId);
 
       if (!Number.isSafeInteger(conversationId) ||
           conversationId < 1 ||
-          !getConversation.get(conversationId, req.user.id)) {
+          !await require("./server/conversations-postgres").getConversation(conversationId, req.user.id)) {
         return res.status(404).json({
           success: false,
           error: 'المحادثة غير موجودة.'
@@ -927,11 +1005,12 @@ app.post('/api/chat', rateLimit, async (req, res) => {
     }
 
     // احفظ رسالة المستخدم أولاً.
-    saveMessage.run(conversationId, 'user', message);
-    updateConversation.run(conversationId);
+    const chatStore = require("./server/conversations-postgres");
+    await chatStore.addMessage(conversationId, 'user', message);
+    await chatStore.updateConversation(conversationId);
 
     // استرجع السياق السابق، مع الحفاظ على ترتيب الرسائل.
-    const history = getHistory.all(conversationId)
+    const history = (await chatStore.getHistory(conversationId))
       .reverse()
       .map(item => ({
         role: item.role === 'assistant' ? 'model' : 'user',
@@ -995,8 +1074,8 @@ app.post('/api/chat', rateLimit, async (req, res) => {
     }
 
     // احفظ رد الذكاء الاصطناعي.
-    saveMessage.run(conversationId, 'assistant', reply);
-    updateConversation.run(conversationId);
+    await chatStore.addMessage(conversationId, 'assistant', reply);
+    await chatStore.updateConversation(conversationId);
 
     res.json({
       success: true,
