@@ -4,6 +4,7 @@ const express = require('express');
 const path = require('path');
 const db = require('./server/database');
 const auth = require('./server/auth-postgres');
+const { query: pgQuery } = require('./server/postgres');
 
 // Conversations use PostgreSQL; skip the legacy SQLite migration.
 
@@ -338,12 +339,14 @@ app.post('/api/auth/logout', async (req, res) => {
 
 
 // AETHER_ADMIN_MIDDLEWARE
-function requireAdmin(req, res, next) {
+async function requireAdmin(req, res, next) {
   try {
-    const admin = db.prepare(`
-      SELECT role FROM admin_roles
-      WHERE user_id = ?
-    `).get(req.user.id);
+    const result = await pgQuery(
+      'SELECT role FROM public.app_admin_roles WHERE user_id = $1 LIMIT 1',
+      [req.user.id]
+    );
+
+    const admin = result.rows[0];
 
     if (!admin || !['admin', 'owner'].includes(admin.role)) {
       return res.status(403).json({
@@ -352,10 +355,10 @@ function requireAdmin(req, res, next) {
       });
     }
 
-    next();
+    return next();
   } catch (error) {
     console.error('Admin authorization error:', error.message);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'تعذر التحقق من صلاحيات المدير.'
     });
@@ -616,10 +619,12 @@ app.delete('/api/admin/users/:id', async (req, res) => {
       });
     }
 
-    // نتحقق من الدور المحلي لأن صلاحيات الأدمن ما زالت في SQLite.
-    const targetAdmin = db.prepare(
-      'SELECT user_id FROM admin_roles WHERE user_id = ?'
-    ).get(targetId);
+    // حماية حسابات المديرين باستخدام PostgreSQL.
+    const targetAdminResult = await client.query(
+      'SELECT user_id FROM public.app_admin_roles WHERE user_id = $1 LIMIT 1',
+      [targetId]
+    );
+    const targetAdmin = targetAdminResult.rows[0];
 
     if (targetAdmin) {
       await client.query('ROLLBACK');
