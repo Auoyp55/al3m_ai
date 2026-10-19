@@ -15,6 +15,120 @@ let activeTool = 'chat';
 let conversationId = null;
 
 let toastTimer = null;
+
+let historyItems = [];
+const HISTORY_PINS_KEY = 'AL3M_SIDEBAR_PINNED_V1';
+
+function getPinnedHistoryIds() {
+  try {
+    const value = JSON.parse(localStorage.getItem(HISTORY_PINS_KEY) || '[]');
+    return new Set(Array.isArray(value) ? value.map(String) : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function savePinnedHistoryIds(ids) {
+  try {
+    localStorage.setItem(HISTORY_PINS_KEY, JSON.stringify([...ids]));
+  } catch (error) {
+    console.warn('Could not save pinned conversations:', error.message);
+  }
+}
+
+function renderConversationHistory() {
+  const list = $('historyList');
+  if (!list) return;
+
+  const search = ($('historySearch')?.value || '').trim().toLocaleLowerCase();
+  const pinned = getPinnedHistoryIds();
+
+  const filtered = historyItems.filter(item =>
+    String(item.title || `محادثة ${item.id}`).toLocaleLowerCase().includes(search)
+  );
+
+  list.replaceChildren();
+
+  if (!filtered.length) {
+    const empty = document.createElement('div');
+    empty.className = 'history-no-results';
+    empty.textContent = search
+      ? 'لا توجد محادثات تطابق بحثك'
+      : 'ستظهر محادثاتك هنا';
+    list.appendChild(empty);
+    return;
+  }
+
+  const pinnedItems = filtered.filter(item => pinned.has(String(item.id)));
+  const recentItems = filtered.filter(item => !pinned.has(String(item.id)));
+
+  function addGroup(label, items) {
+    if (!items.length) return;
+
+    const heading = document.createElement('div');
+    heading.className = 'history-group-label';
+    heading.textContent = label;
+    list.appendChild(heading);
+
+    items.forEach(item => {
+      const id = String(item.id);
+      const title = item.title || `محادثة ${id}`;
+      const row = document.createElement('div');
+      row.className = 'history-row';
+
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'history-item';
+      button.dataset.id = id;
+      button.textContent = title;
+      button.title = title;
+      button.setAttribute('aria-label', `فتح ${title}`);
+
+      if (Number(id) === Number(conversationId)) {
+        button.classList.add('active');
+      }
+
+      button.addEventListener('click', () => openConversation(item.id));
+
+      const pin = document.createElement('button');
+      pin.type = 'button';
+      pin.className = 'history-pin' + (pinned.has(id) ? ' is-pinned' : '');
+      pin.textContent = pinned.has(id) ? '📌' : '♧';
+      pin.title = pinned.has(id) ? 'إلغاء التثبيت' : 'تثبيت المحادثة';
+      pin.setAttribute('aria-label', pin.title);
+
+      pin.addEventListener('click', event => {
+        event.stopPropagation();
+        const updated = getPinnedHistoryIds();
+
+        if (updated.has(id)) updated.delete(id);
+        else updated.add(id);
+
+        savePinnedHistoryIds(updated);
+        renderConversationHistory();
+      });
+
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'history-delete';
+      remove.textContent = '×';
+      remove.title = 'حذف المحادثة';
+      remove.setAttribute('aria-label', 'حذف المحادثة');
+
+      remove.addEventListener('click', event => {
+        event.stopPropagation();
+        deleteConversation(item.id, title);
+      });
+
+      row.append(button, pin, remove);
+      list.appendChild(row);
+    });
+  }
+
+  addGroup('📌 المحادثات المثبتة', pinnedItems);
+  addGroup('◷ المحادثات', recentItems);
+}
+
 const STORAGE_KEY = 'AL3M_LOCAL_CHAT_V1';
 
 function saveLocalChat() {
@@ -60,55 +174,17 @@ async function loadConversationHistory() {
   if (!list) return;
 
   try {
-    const response = await fetch('/api/conversations');
+    const response = await fetch('/api/conversations', {
+      credentials: 'same-origin'
+    });
     const data = await response.json();
 
     if (!response.ok || !data.success) {
       throw new Error(data.error || 'تعذر تحميل السجل');
     }
 
-    list.replaceChildren();
-
-    if (!data.conversations || data.conversations.length === 0) {
-      const empty = document.createElement('div');
-      empty.className = 'history-empty';
-      empty.textContent = 'ستظهر محادثاتك هنا';
-      list.appendChild(empty);
-      return;
-    }
-
-    data.conversations.forEach(item => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      const row = document.createElement('div');
-      row.className = 'history-row';
-
-      button.className = 'history-item';
-      button.dataset.id = item.id;
-      button.textContent = item.title || `محادثة ${item.id}`;
-      button.title = button.textContent;
-
-      if (Number(item.id) === Number(conversationId)) {
-        button.classList.add('active');
-      }
-
-      button.addEventListener('click', () => openConversation(item.id));
-
-      const remove = document.createElement('button');
-      remove.type = 'button';
-      remove.className = 'history-delete';
-      remove.textContent = '×';
-      remove.title = 'حذف المحادثة';
-      remove.setAttribute('aria-label', 'حذف المحادثة');
-
-      remove.addEventListener('click', event => {
-        event.stopPropagation();
-        deleteConversation(item.id, item.title || `محادثة ${item.id}`);
-      });
-
-      row.append(button, remove);
-      list.appendChild(row);
-    });
+    historyItems = Array.isArray(data.conversations) ? data.conversations : [];
+    renderConversationHistory();
   } catch (error) {
     list.replaceChildren();
     const message = document.createElement('div');
@@ -118,7 +194,6 @@ async function loadConversationHistory() {
     console.warn('History load failed:', error);
   }
 }
-
 
 async function deleteConversation(id, title) {
   if (!confirm(`هل تريد حذف "${title}" نهائيًا؟`)) return;
@@ -610,4 +685,25 @@ async function initializeAuthenticatedApp() {
 }
 
 $('refreshHistory')?.addEventListener('click', loadConversationHistory);
+
+$('historySearch')?.addEventListener('input', renderConversationHistory);
+
+document.addEventListener('keydown', event => {
+  if (event.key === '/' &&
+      !event.ctrlKey && !event.metaKey && !event.altKey &&
+      !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName) &&
+      !document.activeElement?.isContentEditable) {
+    event.preventDefault();
+    $('historySearch')?.focus();
+  }
+
+  if (event.key === 'Escape' &&
+      document.activeElement?.id === 'historySearch') {
+    const input = $('historySearch');
+    input.value = '';
+    renderConversationHistory();
+    input.blur();
+  }
+});
+
 initializeAuthenticatedApp();
