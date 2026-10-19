@@ -801,34 +801,28 @@ app.get('/api/admin/settings', (req, res) => {
 // AETHER_ADMIN_OVERVIEW
 app.get('/api/admin/overview', async (req, res) => {
   try {
-    const { pool } = require('./server/postgres');
+    const { query } = require('./server/postgres');
 
-    const pgStats = await pool.query(`
+    const result = await query(`
       SELECT
-        (SELECT COUNT(*) FROM users) AS users,
-        (SELECT COUNT(*) FROM sessions WHERE expires_at > NOW()) AS active_sessions
+        (SELECT COUNT(*) FROM public.users) AS users,
+        (SELECT COUNT(*) FROM public.sessions WHERE expires_at > NOW()) AS active_sessions,
+        (SELECT COUNT(*) FROM public.conversations) AS conversations,
+        (SELECT COUNT(*) FROM public.messages) AS messages
     `);
 
-    const conversations = db.prepare(
-      'SELECT COUNT(*) AS total FROM conversations'
-    ).get().total;
-
-    const messages = db.prepare(
-      'SELECT COUNT(*) AS total FROM messages'
-    ).get().total;
-
-    const setting = db.prepare(
-      "SELECT value FROM site_settings WHERE key = 'maintenance_enabled'"
-    ).get();
+    const settings = await query(
+      "SELECT setting_value FROM public.site_settings WHERE setting_key = 'maintenance_enabled' LIMIT 1"
+    ).catch(() => ({ rows: [] }));
 
     res.json({
       success: true,
       overview: {
-        users: Number(pgStats.rows[0].users),
-        conversations,
-        messages,
-        activeSessions: Number(pgStats.rows[0].active_sessions),
-        maintenance: setting?.value === 'true'
+        users: Number(result.rows[0].users),
+        conversations: Number(result.rows[0].conversations),
+        messages: Number(result.rows[0].messages),
+        activeSessions: Number(result.rows[0].active_sessions),
+        maintenance: settings.rows[0]?.setting_value === true || settings.rows[0]?.setting_value === 'true'
       }
     });
   } catch (error) {
